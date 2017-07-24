@@ -26,7 +26,7 @@ In order
   * `/var/log/nginx/<site name>`  (to hold site log files)
   * `/var/lib/mysql/<site name>` (if you plan to use mysql as database)
 
-After the directory and user creation phases, the script will create a new `php-fpm` pool configuration under `/etc/<php path>/fpm/pool.d/<site name>.conf` using `templates/php_fpm_pool.template` as his config template. Fell free to modify this file to match your own need.   
+After the directory and user creation phases, the script will create a new `php-fpm` pool configuration under `/etc/<php path>/fpm/pool.d/<site name>.conf` using `templates/php_fpm_pool.template` as template. Feel free to modify this file to match your own needs.   
 Português
 
 O objetivo deste projeto é criar processos isolados para `sites php` usando o PHP-FPM. Este processo será de propriedade de um usuário linux. Para garantir isso, esse script cria um novo `usuário`,` grupo` e um `pool php-fpm`de propriedade do usuário.
