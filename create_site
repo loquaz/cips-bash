@@ -1,19 +1,6 @@
 #!/bin/bash
 
-dirs_arr=(/var/www /var/log/nginx /var/lib/mysql)
-nginx_www="/var/www"
-sites_available="/etc/nginx/sites-available/"
-sites_enabled="/etc/nginx/sites-enabled/"
-host_name_sufix=".example.org"
-hosts_file="/etc/hosts"
-created_dirs_arr=()
-php_fpm_service=''
-site=
-user=
-group=
-log_file="/var/log/cips_$$.log"
-
-
+source "config/default"
 
 ##
 # Write a customized message to output
@@ -100,7 +87,7 @@ crete_php_fpm_pool()
 		exit 1
 	fi
 	
-	file_contets=$(cat templates/php_fpm_pool.template | sed  -e "s/__site__/$1/g")
+	file_contets=$(cat templates/php${PHP_VERSION_NUMBER}/php_fpm_pool.template | sed  -e "s/__site__/$1/g")
 	echo "$file_contets" > "$fpm_pool_dir/$1.conf"
 	
 	execute_and_log "service $php_fpm_service restart" 
@@ -116,14 +103,14 @@ crete_php_fpm_pool()
 
 execute_and_log()
 {
-	if [ ! -f $log_file ]; then
-		touch "$log_file" > /dev/null 2>&1
-		echo "Create Isolated PHP Site" > $log_file
+	if [ ! -f $LOG_FILE ]; then
+		touch "$LOG_FILE" > /dev/null 2>&1
+		echo "Create Isolated PHP Site" > $LOG_FILE
 	fi
-	echo $1 >> $log_file
-	$($1 >> $log_file 2>&1)
+	echo $1 >> $LOG_FILE
+	$($1 >> $LOG_FILE 2>&1)
 	if [ $? -ne 0 ]; then
-		message "\t[erro] confira o arquivo: $log_file para mais detalhes"
+		message "\t[erro] confira o arquivo: $LOG_FILE para mais detalhes"
 		exit 1
 	fi
 }
@@ -169,7 +156,6 @@ check_system()
 	nginx_version_output=$(echo $nginx_version_output | sed -e "s/nginx version://")
 	php7_re="^PHP 7"
 	php5_re="^PHP 5"
-	php_version=''
 	php_fpm_service_list=$(ls /etc/init.d | egrep '^php(5|5.0|7|7.0)?-fpm')
 	php_fpm_service_count=$(echo "$php_fpm_service_list" | wc -l)
 	declare -a php_fpm_service_arr='()'
@@ -211,11 +197,11 @@ check_system()
 		exit 1
 	else
 		if [[ "$php_version_output" =~ $php7_re ]]; then
-			php_version=7
+			PHP_VERSION_NUMBER=7
     	elif [[ "$php_version_output" =~ $php5_re ]]; then
-			php_version=5
+			PHP_VERSION_NUMBER=5
     	fi
-		message "\t[ok] PHP $php_version encontrado" $SUCCESS_MESSAGE_TYPE
+		message "\t[ok] PHP $PHP_VERSION_NUMBER encontrado" $SUCCESS_MESSAGE_TYPE
 	fi
 	
 	if [[ -z "$nginx_version_output" ]]; then
@@ -244,15 +230,16 @@ create_vhost()
 	message "-----------------------------------------------------------------" 	$NORMAL_MESSAGE_TYPE
 
 	#add hostname
-	echo -e " 127.0.0.1\t$1$host_name_sufix" >> $hosts_file
-	vhost_file="$sites_available$1"
-	file_contets=$(cat templates/nginx_vhost.template | sed  -e "s/__site__/$1/g")
+	echo -e " 127.0.0.1\t${SITE_NAME}${HOSTNAME_SUFFIX}" >> $HOSTS_FILE
+	vhost_file="$SITES_AVAILABLE_DIR/${SITE_NAME}"
+
+	file_contets=$(cat templates/php${PHP_VERSION_NUMBER}/nginx_vhost.template | sed  -e "s/__site__/$1/g")
 	echo "$file_contets" > "$vhost_file"
 	$(sed  -i -e 's/__ngix_www__/\/var\/www/g' $vhost_file)	
 	
 	message "\t[ok] Virtual Host File: $vhost_file" $SUCCESS_MESSAGE_TYPE
 	
-	execute_and_log "ln -s $vhost_file $sites_enabled$1"
+	execute_and_log "ln -s $vhost_file $SITES_ENABLED_DIR/$1"
 
 	message
 	message "Reiniciando nginx" 										$NORMAL_MESSAGE_TYPE
@@ -276,16 +263,16 @@ main()
 	fi
 	
 	check_system	
-	site=$1
+	SITE_NAME=$1
 
-	if ! user_or_group_exists $site; then
-		if ! create_user $site; then
+	if ! user_or_group_exists $SITE_NAME; then
+		if ! create_user $SITE_NAME; then
 	   		message "[erro]" $ERROR_MESSAGE_TYPE
-			message "\tErro ao criar usuario $site" $ERROR_MESSAGE_TYPE			 
+			message "\tErro ao criar usuario $SITE_NAME" $ERROR_MESSAGE_TYPE			 
 	   		exit 1
 		fi
 	else
-		message "\t[erro] Usuário e/ou grupo $site já existem" $ERROR_MESSAGE_TYPE
+		message "\t[erro] Usuário e/ou grupo $SITE_NAME já existem" $ERROR_MESSAGE_TYPE
 		exit 1
 	fi
 
@@ -296,19 +283,19 @@ main()
 		create_vhost $1
 	fi
 
-	cp php/info.php $nginx_www/$site
+	cp php/info.php $BASE_SITE_ROOT_PATH/$SITE_NAME
 	
 	echo; echo; echo; echo;
 
-	message " * * * Abra o browser apontando para http://$site$host_name_sufix/info.php * * * "	$SUCCESS_MESSAGE_TYPE 
+	message " * * * Abra o browser apontando para http://${SITE_NAME}${HOSTNAME_SUFFIX}/info.php * * * "	$SUCCESS_MESSAGE_TYPE 
 
 	echo; echo; echo; echo;
 }
 
 revert(){
-	userdel $site
-	echo "Removendo usuário e grupo para $site"
-	for directory in ${created_dirs_arr[*]}; do
+	userdel $SITE_NAME
+	echo "Removendo usuário e grupo para $SITE_NAME"
+	for directory in ${created_SITE_DIRS[*]}; do
     	if [ -d "$directory" ]; then
     		echo " x Removendo $directory"
     		rm -rf  $directory
@@ -342,7 +329,7 @@ create_dirs()
 	message "Criando diretórios do site" 				$NORMAL_MESSAGE_TYPE
 	message "-----------------------------------------------------------------" 	$NORMAL_MESSAGE_TYPE
 
-	for directory in ${dirs_arr[*]}; do
+	for directory in ${SITE_DIRS[*]}; do
 	    mk_dir $directory/$1 $1
 	done
 }
@@ -375,7 +362,7 @@ mk_dir()
     		execute_and_log  "mkdir $prefix"
     		
     		created=$prefix
-    		created_dirs_arr[${#created_dirs_arr[*]}]=$created
+    		created_SITE_DIRS[${#created_SITE_DIRS[*]}]=$created
     		message "\t[ok] Diretorio $prefix criado com sucesso!" $SUCCESS_MESSAGE_TYPE
 
     		if [[ "$1" == "$prefix" ]]; then
