@@ -1,6 +1,6 @@
 # Create Isolated PHP Sites - cips-bash
 
-This Project aim is to create a isolated environment owned by a specific linux user. To ensure this, this script creates a new `user`, `group` and a `php-fpm pool` owned by the user.
+This Project aim is to create a isolated processes for `php enabled sites` using PHP-FPM. This process will be owned by a specific linux user. To ensure this, this script creates a new `user`, `group` and a `php-fpm pool` owned by the user.
 
 # Usage
 
@@ -12,9 +12,9 @@ Then type
 ```shell
 sudo ./create_site <site name>
 ```
-Português:
-O objetivo deste projeto é criar um ambiente isolado controlado por um usuário linux específico. Para garantir isto, este script cria um novo `usuário`, `grupo` e um `pool php-fpm` controlado por este usuário.
+Português
 
+O objetivo deste projeto é criar processos isolados para `sites php` usando o PHP-FPM. Este processo será de propriedade de um usuário linux. Para garantir isso, esse script cria um novo `usuário`,` grupo` e um `pool php-fpm`de propriedade do usuário.
 
 
 
