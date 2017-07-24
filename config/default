@@ -14,13 +14,16 @@ BASE_SITE_ROOT_PATH="/var/www"
 SITE_NAME=''
 
 # SITES AVALAIBLE DIR (default to nginx site availables directory)
-SITES_AVALAIBLE_DIR="/etc/nginx/sites-available"
+SITES_AVAILABLE_DIR="/etc/nginx/sites-available"
 
 # SITES ENABLED DIR (default to nginx site enabled directory)
 SITES_ENABLED_DIR="/etc/nginx/sites-enabled"
 
 # HOSTNAME SUFFIX (default to example.org)
-HOSTNAME_SUFFIX="example.org"
+HOSTNAME_SUFFIX=".example.org"
+
+# SYSTEM HOSTS FILE
+HOSTS_FILE="/etc/hosts"
 
 # HOLD ALL CREATED DIRS DURING THE CREATION PHASE
 # IF AN ERROR OCCURS, THIS ARRAY WILL BE USED TO REVERT CHANGES
@@ -30,6 +33,8 @@ declare -a CREATED_DIRS='()'
 # IF AN ERROR OCCURS, THIS ARRAY WILL BE USED TO REVERT CHANGES
 declare -a CREATED_FILES='()'
 
+# PHP VERSION
+PHP_VERSION_NUMBER=''
 # PHP-FPM SERVICE NAME
 PHP_FPM_SERVICE=''
 
