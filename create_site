@@ -1,0 +1,397 @@
+#!/bin/bash
+
+dirs_arr=(/var/www /var/log/nginx /var/lib/mysql)
+nginx_www="/var/www"
+sites_available="/etc/nginx/sites-available/"
+sites_enabled="/etc/nginx/sites-enabled/"
+host_name_sufix=".example.org"
+hosts_file="/etc/hosts"
+created_dirs_arr=()
+php_fpm_service=''
+site=
+user=
+group=
+log_file="/var/log/cips_$$.log"
+
+ERROR_MESSAGE_TYPE='ERROR'
+SUCCESS_MESSAGE_TYPE='SUCCESS'
+WARN_MESSAGE_TYPE='WARN'
+NORMAL_MESSAGE_TYPE='NORMAL'
+
+##
+# Write a customized message to output
+# @param $1 message
+# @param $2 messageType
+# 
+message()
+{	
+	TEXT=''
+	TEXT_NC='\033[0m' # No Color
+	
+	case $2 in
+
+			NORMAL) TEXT='\033[0;33m';;
+			ERROR) TEXT='\033[0;31m';;
+			SUCCESS) TEXT='\033[0;32m';;
+			WARN) TEXT='\033[0;33m';;
+			*) TEXT='\033[0;31m';;
+	esac
+
+	printf "${TEXT} $1 ${TEXT_NC}\n";
+}
+
+usage()
+{
+	echo
+	echo "Você precisa fornecer o nome do site a ser criado!"
+	echo "Uso: createsite nomedosite"
+	echo
+}
+
+user_or_group_exists()
+{
+	id -u $1 &> /dev/null
+	if [ "$?" -eq 0 ]; then
+		id -g $1 &> /dev/null
+		if [ "$?" -eq 0 ]; then
+			return 0;
+		fi
+	fi
+	return 1;
+}
+
+
+clean_orphan_fpm_pools()
+{
+	fpm_logs=$(ls -a /var/log/*fpm* 2> /dev/null | egrep '*.log$')
+	for log in $fpm_logs; do
+		pools=$(cat $log | egrep  '^.+?cannot get uid for user ' | sed -e 's/^\(.*\) cannot get uid for user \(.*\)/\2/g' | tr -d "'")
+		for pool in $pools; do
+			if [ -f $1/$pool.conf ]; then
+				execute_and_log "rm -f $1/$pool.conf"
+			fi
+		done
+
+	done
+}
+
+##
+# Check system dependencies
+# - PHP[5|7] 
+# - nginx server
+# - php-fpm service
+##
+crete_php_fpm_pool()
+{
+	message 
+	message "Criando um novo php-fpm pool para $1" 		$NORMAL_MESSAGE_TYPE
+	message "-----------------------------------------------------------------" 	$NORMAL_MESSAGE_TYPE
+
+	fpm_pool_dir=$(find / -regextype sed -regex ".*/php\(7\.0\|5.0\|7\|5\)\?/\(7\.0\|5.0\|7\|5\)\?/fpm/pool.d" -type d 2> /dev/null)
+	
+	clean_orphan_fpm_pools $fpm_pool_dir
+
+	# try initialize php-fpm service
+	execute_and_log "service $php_fpm_service start"
+	
+	count=$(echo "$fpm_pool_dir" | wc -l)
+	if [[ -z  "$fpm_pool_dir" ]];then
+		message "[erro] Não foi encontrado o diretório para a configuração do pool FPM" $ERROR_MESSAGE_TYPE
+		exit 1
+	elif [[ ! "$count" -eq 1 ]]; then
+		message "[erro] Foi encontrado mais de um diretório para configuração do pool FPM" $ERROR_MESSAGE_TYPE		
+		exit 1
+	fi
+	
+	file_contets=$(cat templates/php_fpm_pool.template | sed  -e "s/__site__/$1/g")
+	echo "$file_contets" > "$fpm_pool_dir/$1.conf"
+	
+	execute_and_log "service $php_fpm_service restart" 
+
+	if [ $? -eq 0 ]; then
+		message "\t[ok] Arquivo de configuração do php-fmp pool: $fpm_pool_dir/$1" $SUCCESS_MESSAGE_TYPE
+	else
+		message "[erro] Não foi possível configurar o php-fpm pool" $ERROR_MESSAGE_TYPE
+		message "\tconfigura o arquivo de log" $SUCCESS_MESSAGE_TYPE	
+		exit 1
+	fi
+}
+
+execute_and_log()
+{
+	if [ ! -f $log_file ]; then
+		touch "$log_file" > /dev/null 2>&1
+		echo "Create Isolated PHP Site" > $log_file
+	fi
+	echo $1 >> $log_file
+	$($1 >> $log_file 2>&1)
+}
+
+command_fail()
+{
+	if [ $1 -ne 0 ]; then
+		return 0
+	fi
+	return 1;
+}
+
+##
+# Check system dependencies
+# - PHP[5|7] 
+# - nginx server
+# - php-fpm service
+##
+check_system()
+{
+	message 
+	message "Checando dependencias" 				$NORMAL_MESSAGE_TYPE
+	message "-----------------------------------------------------------------" 	$NORMAL_MESSAGE_TYPE
+
+	php_version_output=$(php -v 2> /dev/null | grep PHP)
+	
+	# php not found
+	if command_fail $?; then
+		message "\t[erro] NGINX não encontrado" $ERROR_MESSAGE_TYPE
+		message "\tExecute 'sudo apt-get install nginx' para instalar o servidor" $SUCCESS_MESSAGE_TYPE		
+		exit 1
+	fi
+
+	nginx_version_output=$(nginx -v 2>&1)
+
+	# nginx not found
+	if command_fail $?; then
+		message "\t[erro] NGINX não encontrado" $ERROR_MESSAGE_TYPE
+		message "\tExecute 'sudo apt-get install nginx' para instalar o servidor" $SUCCESS_MESSAGE_TYPE		
+		exit 1
+	fi
+
+	nginx_version_output=$(echo $nginx_version_output | sed -e "s/nginx version://")
+	php7_re="^PHP 7"
+	php5_re="^PHP 5"
+	php_version=''
+	php_fpm_service_list=$(ls /etc/init.d | egrep '^php(5|5.0|7|7.0)?-fpm')
+	php_fpm_service_count=$(echo "$php_fpm_service_list" | wc -l)
+	declare -a php_fpm_service_arr='()'
+	idx=0
+
+	if [ "$php_fpm_service_count" -ne 0 -a "$php_fpm_service_count" -eq 1 ]; then
+		php_fpm_service=$php_fpm_service_list
+	else
+		menu=''
+		for service in $php_fpm_service_list; do
+			status=$(service $service status 2> /dev/null)
+			if [[ ! -z "$status" ]]; then
+				menu="$menu\t[$idx] $service\n"
+				message $service $SUCCESS_MESSAGE_TYPE
+				php_fpm_service_arr[$idx]=$service
+				idx=$((idx+1))				
+			fi
+		done
+
+		if [ $idx -gt 1 ]; then
+			message "\t[warn] PHP Foi encontrado mais de um serviço php-fpm" $WARN_MESSAGE_TYPE
+			message $menu $WARN_MESSAGE_TYPE
+
+			while [ -z "$php_fpm_service"  ]; do
+				echo -n "Escolha o serviço: "
+				read opt
+				php_fpm_service=${php_fpm_service_arr[$opt]}			
+			done	
+		else
+			php_fpm_service=${php_fpm_service_arr[$((idx-1))]}			
+		fi		
+		
+	fi
+
+
+	if [[ -z "$php_version_output" ]]; then
+		message "\t [erro] PHP não encontrado" $ERROR_MESSAGE_TYPE
+		message "\tExecute 'sudo apt-get install php5 php5-fpm' ou 'sudo apt-get install php7.0 php7.0-fpm' para instalar o php" $SUCCESS_MESSAGE_TYPE
+		exit 1
+	else
+		if [[ "$php_version_output" =~ $php7_re ]]; then
+			php_version=7
+    	elif [[ "$php_version_output" =~ $php5_re ]]; then
+			php_version=5
+    	fi
+		message "\t[ok] PHP $php_version encontrado" $SUCCESS_MESSAGE_TYPE
+	fi
+	
+	if [[ -z "$nginx_version_output" ]]; then
+		message "\t[erro] NGINX não encontrado" $ERROR_MESSAGE_TYPE
+		message "\tExecute 'sudo apt-get install nginx' para instalar o servidor" $SUCCESS_MESSAGE_TYPE		
+		exit 1
+	else
+		message "\t[ok] Nginx $nginx_version_output encontrado" $SUCCESS_MESSAGE_TYPE
+	fi
+
+	if [ -z "$php_fpm_service" ]; then
+		message "\t[erro] PHP-FPM não encontrado" $ERROR_MESSAGE_TYPE
+		message "\tExecute 'sudo apt-get install php5-fpm' ou 'sudo apt-get install php7.0-fpm'" $SUCCESS_MESSAGE_TYPE		
+		exit 1
+	else
+		message "\t[ok] PHP-FPM $php_fpm_service encontrado" $SUCCESS_MESSAGE_TYPE
+	fi
+    
+}
+
+create_vhost()
+{	
+	message
+	message "Criando Virtual Host para $1" 										$NORMAL_MESSAGE_TYPE
+	message "-----------------------------------------------------------------" 	$NORMAL_MESSAGE_TYPE
+
+	#add hostname
+	echo -e " 127.0.0.1\t$1$host_name_sufix" >> $hosts_file
+	vhost_file="$sites_available$1"
+	file_contets=$(cat templates/nginx_vhost.template | sed  -e "s/__site__/$1/g")
+	echo "$file_contets" > "$vhost_file"
+	$(sed  -i -e 's/__ngix_www__/\/var\/www/g' $vhost_file)	
+	
+	message "\t[ok] Virtual Host File: $vhost_file" $SUCCESS_MESSAGE_TYPE
+	
+	execute_and_log "sudo ln -s $vhost_file $sites_enabled$1"
+
+	message
+	message "Reiniciando nginx" 										$NORMAL_MESSAGE_TYPE
+	message "-----------------------------------------------------------------" 	$NORMAL_MESSAGE_TYPE
+
+	service nginx restart > /dev/null 2>&1
+
+	if [ "$?" -eq 0 ]; then
+		message "\t[ok] Site $1 criado com sucesso!" $SUCCESS_MESSAGE_TYPE
+	else
+		message "\t[erro] Falha ao reiniciar o nginx" $ERROR_MESSAGE_TYPE
+		exit 1
+	fi
+}
+
+main()
+{
+	if [ -z "$1" ]; then
+		usage
+		exit 1;
+	fi
+	
+	check_system	
+	site=$1
+
+	if ! user_or_group_exists $site; then
+		if ! create_user $site; then
+	   		message "[erro]" $ERROR_MESSAGE_TYPE
+			message "\tErro ao criar usuario $site" $ERROR_MESSAGE_TYPE			 
+	   		exit 1
+		fi
+	else
+		message "\t[erro] Usuário e/ou grupo $site já existem" $ERROR_MESSAGE_TYPE
+		exit 1
+	fi
+
+	if ! create_dirs $1; then
+		:
+	else
+		crete_php_fpm_pool $1
+		create_vhost $1
+	fi
+
+	cp php/info.php $nginx_www/$site
+	
+	echo; echo; echo; echo;
+
+	message " * * * Abra o browser apontando para http://$site$host_name_sufix/info.php * * * "	$SUCCESS_MESSAGE_TYPE 
+
+	echo; echo; echo; echo;
+}
+
+revert(){
+	userdel $site
+	echo "Removendo usuário e grupo para $site"
+	for directory in ${created_dirs_arr[*]}; do
+    	if [ -d "$directory" ]; then
+    		echo " x Removendo $directory"
+    		rm -rf  $directory
+    	fi
+	done
+}
+##
+# create a new group and user who owns the site
+##
+create_user()
+{
+	message
+	message "Criando grupo e usuario donos do site" 				$NORMAL_MESSAGE_TYPE
+	message "-----------------------------------------------------------------" 	$NORMAL_MESSAGE_TYPE
+	
+	if groupadd $1; then
+		message "\t[ok] Grupo $1 criado com sucesso!" $SUCCESS_MESSAGE_TYPE
+		
+		if useradd -g $1 $1; then
+			message "\t[ok] Usario $1 criado com sucesso!" $SUCCESS_MESSAGE_TYPE
+			return 0;
+		fi		
+	fi
+	return 1;
+	
+}
+
+create_dirs()
+{
+	message
+	message "Criando diretórios do site" 				$NORMAL_MESSAGE_TYPE
+	message "-----------------------------------------------------------------" 	$NORMAL_MESSAGE_TYPE
+
+	for directory in ${dirs_arr[*]}; do
+	    mk_dir $directory/$1 $1
+	done
+}
+
+mk_dir()
+{
+	
+	if [ -d "$1" ]; then
+		message "\t[erro] Diretório $1 já existe!" $ERROR_MESSAGE_TYPE
+		message "\tRemovendo configurações para $2" $SUCCESS_MESSAGE_TYPE
+		revert;
+    	exit 1
+    fi
+
+	splited_path=$1
+	splited_dirs=$(echo $splited_path | tr "/" "\n")
+	prefix=/
+	last_dir=$prefix
+	in_root=true
+	created=
+	for directory in $splited_dirs; do
+    	if $in_root; then
+    		in_root=false;
+    		prefix="$prefix$directory"
+    	else
+    		prefix="$prefix/$directory"
+    	fi
+    	
+    	if [ ! -d $prefix ]; then
+    		mkdir $prefix
+    		
+    		created=$prefix
+    		created_dirs_arr[${#created_dirs_arr[*]}]=$created
+    		message "\t[ok] Diretorio $prefix criado com sucesso!" $SUCCESS_MESSAGE_TYPE
+
+    		if [[ "$1" == "$prefix" ]]; then
+    			chown $2:$2 $prefix
+    		fi
+    	else
+    		if [ ! -w $last_dir ]; then
+    			message "\t[erro] Não é possivel criar diretorio em $last_dir" $ERROR_MESSAGE_TYPE
+				message "\tPermissao negada" $SUCCESS_MESSAGE_TYPE    			
+    		fi
+    	fi
+    	last_dir=$prefix
+	done
+
+	if [ -z "$created" ]; then
+		message "\t[erro] Nenhum diretorio foi criado" $ERROR_MESSAGE_TYPE
+	fi
+
+}
+
+main $1
