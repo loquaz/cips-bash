@@ -28,6 +28,38 @@ In order
 
 After the directory and user creation phases, the script will create a new `php-fpm` pool configuration under `/etc/<php path>/fpm/pool.d/<site name>.conf` using `templates/<php version folder>/php_fpm_pool.template` as template. Feel free to modify this file to match your own needs.
 
+After that, there should be a running site using an dedicated php-fpm pool owned by the site owner. This user has the same name provided as site name. The pool configuration file will be in:  `path /etc/<php version>/fpm/pool.d/<nome do site>.conf`.
+
+Example: if the site's name provided as argument to the script is  `api_v2` in an environment with php5` and `php5-fpm` enabled, then, a pool configuration file will be created under the path:
+
+```bash
+/etc/php5/fpm/pool.d/api_v2.conf
+```
+
+You can open this file and made your own changes to configure the pool. You must to restart the `php-fpm` service. In Debian based distros (Ubuntu is a Debian based distro) you can list these services by typing the following command: `ls /etc/init.d/`. To list only the php-fpm related services type:
+
+
+```bash
+ls /etc/init.d/ | egrep '^php.+-fpm$'
+```
+This command lists only services related to `php-fpm`. The regular expression provided as argument to the egrep command `'^php.+-fpm$'`, matches all services that begins with `php` and ends with `-fpm`.
+
+If the outut result is `php5-fpm`, so you must to type: 
+
+```bash
+sudo service php5-fpm restart
+```
+
+In case of failure, check the fpm log file under `/var/log/<service name>.log`. In our case, the complete path to this file is: `/var/log/php5-fpm.log`. 
+
+You can use an text editor to browse the file contents or you can type: 
+
+```bash
+cat /var/log/php5-fpm.log
+```
+
+To see the file contents in the default stdout, in this case, the terminal.
+
 # !Important!
 
 The followed approach to do this tool was based in this tutorial [How To Host Multiple Websites Securely With Nginx And Php-fpm On Ubuntu 14.04 ](https://www.digitalocean.com/community/tutorials/how-to-host-multiple-websites-securely-with-nginx-and-php-fpm-on-ubuntu-14-04).
