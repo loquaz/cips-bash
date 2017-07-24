@@ -26,7 +26,7 @@ In order
   * `/var/log/nginx/<site name>`  (to hold site log files)
   * `/var/lib/mysql/<site name>` (if you plan to use mysql as database)
 
-After the directory and user creation phases, the script will create a new `php-fpm` pool configuration under `/etc/<php path>/fpm/pool.d/<site name>.conf` using `templates/php_fpm_pool.template` as template. Feel free to modify this file to match your own needs.
+After the directory and user creation phases, the script will create a new `php-fpm` pool configuration under `/etc/<php path>/fpm/pool.d/<site name>.conf` using `templates/<php version folder>/php_fpm_pool.template` as template. Feel free to modify this file to match your own needs.
 
 TODO
 
@@ -62,7 +62,12 @@ Na ordem
   * `/var/log/nginx/<nome do site>`  (arquivos de log)
   * `/var/lib/mysql/<nome do site>` (para armazenar arquivos do mysql caso você pretenda usar)
 
-Depois da fase de criação de diretórios, o script cria uma nova configuração para o pool `php-fpm` no caminho `/etc/<php path>/fpm/pool.d/<site name>.conf` usando `templates/php_fpm_pool.template` como template. Sinta-se livre para modificar este arquivo com suas próprias configurações.
+Depois da fase de criação de diretórios, o script cria uma nova configuração para o pool `php-fpm` no caminho `/etc/<php path>/fpm/pool.d/<site name>.conf` usando `templates/<pasta com a versão do php>/php_fpm_pool.template` como template. Sinta-se livre para modificar este arquivo com suas próprias configurações.
+
+# !Importante!
+
+O aproach seguido, foi baseado neste tutorial [How To Host Multiple Websites Securely With Nginx And Php-fpm On Ubuntu 14.04 ] (https://www.digitalocean.com/community/tutorials/how-to-host-multiple-websites-securely-with-nginx-and-php-fpm-on-ubuntu-14-04) Esta é uma versão alpha que está sendo testada em container docker. Está em fase inicial de desenvolvimento e ainda há muito trabalho a ser feito até atingir o estágio de versão estágio. Quem quiser, pode se envolver no projeto, corrigingo bugs, traduzindo, apontando possíveis usos. Sinta-se a vontade.
+Para entrar em contato mande-me um email para: sereno.desenvolvimento@gmail.com
 
 TODO
 

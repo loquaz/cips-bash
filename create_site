@@ -261,7 +261,7 @@ create_vhost()
 	message "Reiniciando nginx" 										$NORMAL_MESSAGE_TYPE
 	message "-----------------------------------------------------------------" 	$NORMAL_MESSAGE_TYPE
 
-	execute_and_log "service nginx restart > /dev/null 2>&1"
+	execute_and_log "service nginx restart"
 
 	if [ "$?" -eq 0 ]; then
 		message "\t[ok] Site $1 criado com sucesso!" $SUCCESS_MESSAGE_TYPE
@@ -375,7 +375,7 @@ mk_dir()
     	fi
     	
     	if [ ! -d $prefix ]; then
-    		mkdir $prefix
+    		execute_and_log  "mkdir $prefix"
     		
     		created=$prefix
     		created_dirs_arr[${#created_dirs_arr[*]}]=$created
