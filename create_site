@@ -87,7 +87,7 @@ crete_php_fpm_pool()
 	message "Criando um novo php-fpm pool para $1" 		$NORMAL_MESSAGE_TYPE
 	message "-----------------------------------------------------------------" 	$NORMAL_MESSAGE_TYPE
 
-	fpm_pool_dir=$(find / -regextype sed -regex ".*/php\(7\.0\|5.0\|7\|5\)\?/\(7\.0\|5.0\|7\|5\)\?/fpm/pool.d" -type d 2> /dev/null)
+	fpm_pool_dir=$(find / -regextype sed -regex ".*/php\(7\.0\|5.0\|7\|5\)\?/\(\(7\.0\|5.0\|7\|5\)\/\)\?fpm/pool.d" -type d 2> /dev/null)
 	
 	clean_orphan_fpm_pools $fpm_pool_dir
 
@@ -125,6 +125,10 @@ execute_and_log()
 	fi
 	echo $1 >> $log_file
 	$($1 >> $log_file 2>&1)
+	if [ $? -ne 0 ]; then
+		message "\t[erro] confira o arquivo: $log_file para mais detalhes"
+		exit 1
+	fi
 }
 
 command_fail()
@@ -237,6 +241,7 @@ check_system()
 
 create_vhost()
 {	
+
 	message
 	message "Criando Virtual Host para $1" 										$NORMAL_MESSAGE_TYPE
 	message "-----------------------------------------------------------------" 	$NORMAL_MESSAGE_TYPE
@@ -250,13 +255,13 @@ create_vhost()
 	
 	message "\t[ok] Virtual Host File: $vhost_file" $SUCCESS_MESSAGE_TYPE
 	
-	execute_and_log "sudo ln -s $vhost_file $sites_enabled$1"
+	execute_and_log "ln -s $vhost_file $sites_enabled$1"
 
 	message
 	message "Reiniciando nginx" 										$NORMAL_MESSAGE_TYPE
 	message "-----------------------------------------------------------------" 	$NORMAL_MESSAGE_TYPE
 
-	service nginx restart > /dev/null 2>&1
+	execute_and_log "service nginx restart > /dev/null 2>&1"
 
 	if [ "$?" -eq 0 ]; then
 		message "\t[ok] Site $1 criado com sucesso!" $SUCCESS_MESSAGE_TYPE
