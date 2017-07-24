@@ -73,6 +73,37 @@ Na ordem
 
 Depois da fase de criação de diretórios, o script cria uma nova configuração para o pool `php-fpm` no caminho `/etc/<php path>/fpm/pool.d/<site name>.conf` usando `templates/<pasta com a versão do php>/php_fpm_pool.template` como template. Sinta-se livre para modificar este arquivo com suas próprias configurações.
 
+Depois disso, deverá existir um site em funcionamento, usando um php-fpm pool próprio, controlado pelo usuário de mesmo nome do site. O arquivo de configuração do pool será: `path /etc/<versao php>/fpm/pool.d/<nome do site>.conf`.
+
+Exemplo: caso o nome do site passado como argumento para o script seja `api_v2` em um ambiente com `php5` e `php5-fpm` habilitado, Será criado então um arquivo de configuração do pool no caminho:
+```bash
+/etc/php5/fpm/pool.d/api_v2.conf
+```
+
+Você pode abrir este arquivo e configura-lo do jeito que quiser. Mas não esqueça de reiniciar o serviço php-fpm rodando na sua máquina. Em ambientes baseados em Debian (Ubuntu é baseado no Debian) você pode listar estes serviços digitando o seguinte comando `ls /etc/init.d/`. Para listar apenas os serviços instalados pelo php-fpm digite:
+
+```bash
+ls /etc/init.d/ | egrep '^php.+-fpm$'
+```
+
+Este comando irá listar apenas os serviços relativos a `php-fpm`. E expressão regular fornecida como parametro pro comando egrep `'^php.+-fpm$'`,  vai encontrar todos os serviços começando em `php` e que terminam com `-fpm`.
+
+Caso o resultado seja `php5-fpm`, digite então: 
+
+```bash
+sudo service php5-fpm restart
+```
+
+Em caso de falha, confira o log do fpm que geralmente encontra-se em `/var/log/<nome do serviço>.log`. No nosso caso, o caminho completo para este arquivo é: `/var/log/php5-fpm.log`.
+
+Você pode usar um editor de texto para ver as mensgens dentro deste arquivo ou pode simplestemente digitar: 
+
+```bash
+cat /var/log/php5-fpm.log
+```
+
+para ver o conteúdo do arquivo na saída padrão, neste caso o próprio terminal.
+
 # !Importante!
 
 O aproach seguido, foi baseado neste tutorial [How To Host Multiple Websites Securely With Nginx And Php-fpm On Ubuntu 14.04 ](https://www.digitalocean.com/community/tutorials/how-to-host-multiple-websites-securely-with-nginx-and-php-fpm-on-ubuntu-14-04) Esta é uma versão alpha que está sendo testada em container docker. Está em fase inicial de desenvolvimento e ainda há muito trabalho a ser feito até atingir o estágio de versão estágio. Quem quiser, pode se envolver no projeto, corrigingo bugs, traduzindo, apontando possíveis usos. Sinta-se a vontade.

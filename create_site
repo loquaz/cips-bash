@@ -13,10 +13,7 @@ user=
 group=
 log_file="/var/log/cips_$$.log"
 
-ERROR_MESSAGE_TYPE='ERROR'
-SUCCESS_MESSAGE_TYPE='SUCCESS'
-WARN_MESSAGE_TYPE='WARN'
-NORMAL_MESSAGE_TYPE='NORMAL'
+
 
 ##
 # Write a customized message to output
