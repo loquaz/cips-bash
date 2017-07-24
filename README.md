@@ -138,7 +138,7 @@ para ver o conteúdo do arquivo na saída padrão, neste caso o próprio termina
 
 # !Importante!
 
-O aproach seguido, foi baseado neste tutorial [How To Host Multiple Websites Securely With Nginx And Php-fpm On Ubuntu 14.04 ](https://www.digitalocean.com/community/tutorials/how-to-host-multiple-websites-securely-with-nginx-and-php-fpm-on-ubuntu-14-04) Esta é uma versão alpha que está sendo testada em container docker. Está em fase inicial de desenvolvimento e ainda há muito trabalho a ser feito até atingir o estágio de versão estágio. Quem quiser, pode se envolver no projeto, corrigingo bugs, traduzindo, apontando possíveis usos. Sinta-se a vontade.
+O aproach seguido, foi baseado neste tutorial [How To Host Multiple Websites Securely With Nginx And Php-fpm On Ubuntu 14.04 ](https://www.digitalocean.com/community/tutorials/how-to-host-multiple-websites-securely-with-nginx-and-php-fpm-on-ubuntu-14-04) Esta é uma versão alpha que está sendo testada em container docker. Está em fase inicial de desenvolvimento e ainda há muito trabalho a ser feito até atingir o estágio de versão estável. Quem quiser, pode se envolver no projeto, corrigingo bugs, traduzindo, apontando possíveis usos. Sinta-se a vontade.
 Para entrar em contato mande-me um email para: sereno.desenvolvimento@gmail.com
 
 TODO
