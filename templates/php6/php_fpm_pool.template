@@ -1,7 +1,7 @@
 [__site__]
 user = __site__
 group = __site__
-listen = /var/run/php5-fpm-__site__.sock
+listen = /var/run/php6-fpm-__site__.sock
 listen.owner = www-data
 listen.group = www-data
 php_admin_value[disable_functions] = exec,passthru,shell_exec,system
