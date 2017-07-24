@@ -37,11 +37,11 @@ You can contact me at: sereno.desenvolvimento@gmail.com
 
 TODO
 
- - [] Fix a lot of bugs
- - [] Add messages in other languages than portuguese
- - [] Allow more flexibility by adding options
- - [] Write documentation
- - [] Build a docker image that will contain this tool as a default system tool
+- [] Fix a lot of bugs
+- [] Add messages in other languages than portuguese
+- [] Allow more flexibility by adding options
+- [] Write documentation
+- [] Build a docker image that will contain this tool as a default system tool
 
 # Português
 
@@ -80,11 +80,11 @@ Para entrar em contato mande-me um email para: sereno.desenvolvimento@gmail.com
 
 TODO
 
- - [] Resolver um monte de bugs
- - [] Dar suporte a outras linguas (as mensagens estão direto nas functions, retirar isso pra um arquivo separado)
- - [] Dar a possibilidade do usuário informar opções ao executar o script
- - [] Escrever documentação
- - [] Construir uma imagem docker que usará o script como ferramenta default
+- [] Resolver um monte de bugs
+- [] Dar suporte a outras linguas (as mensagens estão direto nas functions, retirar isso pra um arquivo separado)
+- [] Dar a possibilidade do usuário informar opções ao executar o script
+- [] Escrever documentação
+- [] Construir uma imagem docker que usará o script como ferramenta default
 
 
 
