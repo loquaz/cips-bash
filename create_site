@@ -222,6 +222,17 @@ check_system()
     
 }
 
+find_pattern()
+{
+	pattern=$1
+	string=$2
+	if echo "$string" | grep -q "$pattern"; then
+  		return 0;
+	else
+  		return 1;
+	fi
+}
+
 create_vhost()
 {	
 
@@ -229,8 +240,14 @@ create_vhost()
 	message "Criando Virtual Host para $1" 										$NORMAL_MESSAGE_TYPE
 	message "-----------------------------------------------------------------" 	$NORMAL_MESSAGE_TYPE
 
-	#add hostname
-	echo -e " 127.0.0.1\t${SITE_NAME}${HOSTNAME_SUFFIX}" >> $HOSTS_FILE
+	host_file_contents=$(cat $HOSTS_FILE)
+	
+	if ! find_pattern "${SITE_NAME}${HOSTNAME_SUFFIX}" "$host_file_contents"; then
+		# add host alias to hosts files
+		host_alias="127.0.0.1 	${SITE_NAME}${HOSTNAME_SUFFIX}"
+		echo -e $host_alias >> $HOSTS_FILE
+	fi
+
 	vhost_file="$SITES_AVAILABLE_DIR/${SITE_NAME}"
 
 	file_contets=$(cat templates/php${PHP_VERSION_NUMBER}/nginx_vhost.template | sed  -e "s/__site__/$1/g")
