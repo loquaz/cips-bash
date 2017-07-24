@@ -28,6 +28,13 @@ In order
 
 After the directory and user creation phases, the script will create a new `php-fpm` pool configuration under `/etc/<php path>/fpm/pool.d/<site name>.conf` using `templates/<php version folder>/php_fpm_pool.template` as template. Feel free to modify this file to match your own needs.
 
+# !Important!
+
+The followed approach to do this tool was based in this tutorial [How To Host Multiple Websites Securely With Nginx And Php-fpm On Ubuntu 14.04 ](https://www.digitalocean.com/community/tutorials/how-to-host-multiple-websites-securely-with-nginx-and-php-fpm-on-ubuntu-14-04).
+
+This is a alpha version tested only in docker containers. The development is in this initial phase and there are a lot of work to be done until a stable version be releasead. You can contribute to this project if you want by doing one of these thigs: finding bugs, correcting the code, translating, pointing possibles use cases. Feel free to do what you want.
+You can contact me at: sereno.desenvolvimento@gmail.com
+
 TODO
 
  * Fix a lot of bugs
